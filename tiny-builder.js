@@ -1,11 +1,90 @@
-const createElement = (html) => {
-	let template = document.createElement('template');
+/** FUNCTIONS **/
+
+/**
+ * Create HTML element
+ * @param {string} html HTML string
+ * @returns {HTMLElement}
+ */
+function createElement( html ) {
+	let template = document.createElement( 'template' );
 	template.innerHTML = html;
 
 	return template.content.firstChild;
+}
+
+/** TINY BUILDER **/
+
+const tb = {
+	components: [],
+	builder: null
 };
 
-const getRootComponents = (components) => {
+function getComponentBy( prop, value ) {
+	return tb.components.filter( component => {
+		return component[prop] === value;
+	})[0];
+};
+
+function getComponentFields( fields ) {
+	return '';
+}
+
+function getComponentSettings( component ) {
+	if ( 'fields' in component ) {
+		return `<div class="tb-component-settings">
+			<button onclick="openSettings(this)">Edit</button>
+			<div class="tb-component-fields"></div>
+		</div>`;
+	}
+}
+
+function getComponentActions( component ) {
+	if ( 'subComponents' in component ) {
+		return `<div class="tb-component-actions">
+			${ component.subComponents.map( subComponentId => {
+				let subComponent = getComponentBy( 'id', subComponentId );
+				return `<button>Add ${subComponent.name}</button>`;
+			} )}
+		</div>`;
+	}
+
+	return '';
+}
+
+function addComponentTemplates( components ) {
+	
+}
+
+function getComponentTemplate( component ) {
+	return `<div class="tb-component tb-component-${component.id}">
+		${getComponentFields( component )}
+		<div class="tb-component-content"></div>
+		${getComponentActions( component )}
+	</div>`;
+}
+
+/**
+ * Initialize tinyBuilder
+ * @param {array} 		components 
+ * @param {HTMLElement} builderElement
+ */
+function tinyBuilder( components, builder ) {
+	tb.builder = builder;
+	tb.components = components;
+
+	tb.components = tb.components.map( component => {
+		component.template = getComponentTemplate( component );
+		return component;
+	} );
+
+	console.log( tb.components );
+}
+
+
+
+/*
+
+function getRootComponents(components) {
 	return components.filter((component) => {
 		let isRoot = true;
 
@@ -21,44 +100,9 @@ const getRootComponents = (components) => {
 
 		return isRoot;
 	});
-};
+}
 
-const components = [{
-		id: 'section',
-		name: 'Section',
-		subComponents: ['row'],
-	},
-	{
-		id: 'row',
-		name: 'Row',
-		subComponents: ['column']
-	},
-	{
-		id: 'column',
-		name: 'Column',
-		subComponents: ['text-module', 'image-module']
-	},
-	{
-		id: 'text-module',
-		name: 'Text Module',
-		fields: {
-			content: {
-				label: 'Content',
-				type: 'text'
-			}
-		}
-	},
-	{
-		id: 'image-module',
-		name: 'Image Module'
-	}
-];
 
-const getComponentBy = (prop, value) => {
-	return components.filter(component => {
-		return component[prop] === value;
-	})[0];
-};
 
 const getField = (field) => {
 	let output = '<div class="field">';
@@ -131,3 +175,4 @@ pageBuilder.addEventListener('click', (ev) => {
 		actionsButtons.classList.add('closed');
 	}
 });
+*/
