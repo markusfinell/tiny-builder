@@ -2,12 +2,15 @@ const components = [
 	{
 		id: 'section',
 		name: 'Section',
-		subComponents: [ 'row' ]
+		subComponents: [ 'row' ],
+		root: true,
+		defaultContent: [ 'row' ]
 	},
 	{
 		id: 'row',
 		name: 'Row',
-		subComponents: [ 'section', 'column' ]
+		subComponents: [ 'column' ],
+		defaultContent: [ 'column' ]
 	},
 	{
 		id: 'column',
@@ -30,6 +33,4 @@ const components = [
 	}
 ];
 
-const builder = document.getElementById( 'tiny-builder' );
-
-tinyBuilder( components, builder );
+document.getElementById( 'builder' ).innerHTML = tinyBuilder(components);

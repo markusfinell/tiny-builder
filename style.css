@@ -1,0 +1,28 @@
+* {
+ box-sizing: border-box;
+}
+
+.tb-component {
+ border: 1px solid #ccc;
+ padding: 5px 25px 5px 5px;
+ position: relative;
+}
+
+.delete-component {
+ position: absolute;
+ top: 0;
+ right: 0;
+ width: 16px;
+ height: 16px;
+ padding: 0;
+ line-height: 1;
+ font-size: 12px;
+}
+
+.row-content {
+ display: flex;
+}
+
+.row-content > .tb-component {
+ flex: 1 0 auto;
+}

@@ -1,26 +1,5 @@
-/** FUNCTIONS **/
-
-/**
- * Create HTML element
- * @param {string} html HTML string
- * @returns {HTMLElement}
- */
-function createElement( html ) {
-	let template = document.createElement( 'template' );
-	template.innerHTML = html;
-
-	return template.content.firstChild;
-}
-
-/** TINY BUILDER **/
-
-const tb = {
-	components: [],
-	builder: null
-};
-
-function getComponentBy( prop, value ) {
-	return tb.components.filter( component => {
+function getComponentBy( prop, value, components) {
+	return components.filter( component => {
 		return component[prop] === value;
 	})[0];
 };
@@ -31,148 +10,85 @@ function getComponentFields( fields ) {
 
 function getComponentSettings( component ) {
 	if ( 'fields' in component ) {
-		return `<div class="tb-component-settings">
+		return `<div class="component-settings">
 			<button onclick="openSettings(this)">Edit</button>
-			<div class="tb-component-fields"></div>
+			<div class="component-fields"></div>
 		</div>`;
 	}
 }
 
-function getComponentActions( component ) {
+function getComponentActions( component, components ) {
 	if ( 'subComponents' in component ) {
-		return `<div class="tb-component-actions">
+		return `<div class="component-actions">
 			${ component.subComponents.map( subComponentId => {
-				let subComponent = getComponentBy( 'id', subComponentId );
-				return `<button>Add ${subComponent.name}</button>`;
-			} )}
+				const subComponent = getComponentBy( 'id', subComponentId, components );
+				return `<button onclick="addComponent(this, '${subComponentId}', '${component.id}')">Add ${subComponent.name}</button>`;
+			} ).join('') }
 		</div>`;
 	}
-
+	
 	return '';
 }
 
-function addComponentTemplates( components ) {
-	
+function getDefaultContent( component, components ) {
+ if ( 'defaultContent' in component ) {
+  return component.defaultContent.map( componentId => {
+   return getComponentTemplate( getComponentBy( 'id', componentId, components ), components );
+  });
+ }
+ 
+ return '';
 }
 
-function getComponentTemplate( component ) {
-	return `<div class="tb-component tb-component-${component.id}">
-		${getComponentFields( component )}
-		<div class="tb-component-content"></div>
-		${getComponentActions( component )}
+function getComponentTemplate( component, components ) {
+ return `<div class="tb-component ${component.id}-component">
+		<div class="${component.id}-content">
+		 ${getDefaultContent( component, components )}
+		</div>
+		${getComponentActions( component, components )}
+		<button class="delete-component" onclick="deleteComponent(this)" title="Delete ${component.name}">x</button>
 	</div>`;
 }
 
-/**
- * Initialize tinyBuilder
- * @param {array} 		components 
- * @param {HTMLElement} builderElement
- */
-function tinyBuilder( components, builder ) {
-	tb.builder = builder;
-	tb.components = components;
-
-	tb.components = tb.components.map( component => {
-		component.template = getComponentTemplate( component );
-		return component;
-	} );
-
-	console.log( tb.components );
-}
-
-
-
-/*
-
 function getRootComponents(components) {
-	return components.filter((component) => {
-		let isRoot = true;
-
-		for (cmpt in components) {
-			if (components[cmpt].id === component.id) {
-				continue;
-			}
-
-			if ('subComponents' in components[cmpt] && components[cmpt].subComponents.indexOf(component.id) !== -1) {
-				isRoot = false;
-			}
-		}
-
-		return isRoot;
+	return components.filter(component => {
+		return component?.root;
 	});
 }
 
-
-
-const getField = (field) => {
-	let output = '<div class="field">';
-	output += '<label>' + field.label + '</label>';
-	// output += '<input type="' + field.type + '">"';
-	output += '</div>';
-};
-
-const rootComponents = getRootComponents(components);
-const pageBuilder = document.querySelector('#page-builder');
-const componentTemplates = {};
-
-for (let key in components) {
-	let component = components[key];
-	let template = '<div class="component ' + component.id + '">';
-	template += '<div class="content"></div>';
-
-	if ('fields' in component) {
-		template += '<div class="settings">';
-		template += '<button onclick="openFields(this)">Edit</button>';
-		template += '<div class="fields">';
-
-		for (key in component.fields) {
-			template += getField(component.fields[key]);
-		}
-
-		template += '</div></div>';
-		console.log(component.fields);
-	}
-
-	if ('subComponents' in component) {
-		template += '<div class="actions">';
-		if (component.subComponents.length > 1) {
-			template += '<button onclick="openAdd(this)">Add</button>';
-		}
-		template += '<div class="actions-buttons' + (component.subComponents.length > 1 ? ' closed' : '') + '">';
-		for (let key in component.subComponents) {
-			let subComponentId = component.subComponents[key];
-			let subComponent = getComponentBy('id', subComponentId);
-
-			template += "<button onclick='add(this, \"" + subComponent.id + "\")'>Add " + subComponent.name + "</button>";
-		}
-		template += '</div></div>';
-	}
-
-	template += '</div>';
-
-	componentTemplates[component.id] = template;
+function getBuilderActions(components) {
+ return `<div class="builder-actions">
+  ${getRootComponents(components).map(component => {
+   return `<button onclick="addComponent(this, '${component.id}', 'builder')">Add ${component.name}</button>`;
+  })}
+ </div>`;
 }
 
-for (let component in rootComponents) {
-	let addComponentBtn = createElement("<button onclick='add(this, \"" + rootComponents[component].id + "\")'>Add " + rootComponents[component].name + "</button>");
-	pageBuilder.querySelector('.actions').append(addComponentBtn);
+function getComponentTemplates(components) {
+ return components.map(component => {
+  return `<template id="${component.id}-template">
+   ${getComponentTemplate(component, components)}
+  </template>`;
+ }).join('');
 }
 
-const add = (el, componentId) => {
-	el.closest('.actions').parentElement.querySelector('.content').append(createElement(componentTemplates[componentId]));
-};
+function tinyBuilder(components) {
+ return `<div id="tiny-builder" class="builder-component">
+  <div class="builder-content"></div>
+  ${getBuilderActions(components)}
+  ${getComponentTemplates(components)}
+ </div>`;
+}
 
-const openAdd = el => {
-	el.parentElement.querySelector('.actions-buttons').classList.remove('closed');
-	el.parentElement.querySelector('.actions-buttons').classList.add('open');
-};
+function addComponent(el, componentId, parentId) {
+ const componentTemplate = document.getElementById(componentId+'-template').innerHTML;
+ const parentEl = el.closest( '.' + parentId + '-component' );
+ const contentEl = parentEl.querySelector('.'+parentId+'-content');
+ contentEl.innerHTML += componentTemplate;
+ 
+ return componentTemplate;
+}
 
-pageBuilder.addEventListener('click', (ev) => {
-	let actionsButtons = pageBuilder.querySelector('.actions-buttons.open');
-	let onclick = ev.target.getAttribute('onclick');
-	if (actionsButtons && (!onclick || onclick.indexOf('openAdd') !== 0)) {
-		actionsButtons.classList.remove('open');
-		actionsButtons.classList.add('closed');
-	}
-});
-*/
+function deleteComponent(el){
+ el.closest('.tb-component').remove();
+}
